@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Kiya Ice Cream — Violet Evergarden</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg-top: #eaf6ff;
+  --bg-bottom: #e6f2ff;
+  --violet: #7b59f1;
+  --ice: #cfe8ff;
+  --paper: #fffaf4;
+  --ink: #2c1f2c;
+  --card-radius: 18px;
+  --ease: cubic-bezier(.2,.9,.25,1);
+  --maxw: 1100px;
+}
+
+/* ---------- base & lock scroll ---------- */
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;padding:0;overflow:hidden;font-family: "Playfair Display", serif;-webkit-font-smoothing:antialiased}
+body{background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));color:var(--ink)}
+
+/* ---------- ambient background image (soft) ---------- */
+.ambient{
+  position:fixed;inset:0;background-position:center;background-size:cover;opacity:.12;filter:blur(8px) saturate(.95) contrast(.95);
+  z-index:0;pointer-events:none;
+}
+
+/* ---------- fx canvas ---------- */
+#fxCanvas{position:fixed;inset:0;z-index:2;pointer-events:none}
+
+/* ---------- stage / center ---------- */
+.stage{position:relative;z-index:6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:28px}
+
+/* ---------- scenes ---------- */
+.scene{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.98);opacity:0;pointer-events:none;transition:opacity .45s var(--ease), transform .45s var(--ease);max-width:var(--maxw)}
+.scene.active{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+
+/* ---------- start card ---------- */
+.start-card{
+  width:780px;max-width:92vw;border-radius:var(--card-radius);
+  padding:36px;text-align:center;background:linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  box-shadow:0 40px 140px rgba(25,18,40,0.10);backdrop-filter: blur(6px);
+}
+.title{font-family:'Great Vibes',cursive;font-size:48px;color:var(--violet);margin:0}
+.subtitle{font-size:15px;color:rgba(0,0,0,0.55);margin-top:6px}
+
+/* ---------- button ---------- */
+.controls{display:flex;gap:12px;justify-content:center;margin-top:18px}
+.btn{
+  padding:12px 22px;border-radius:12px;border:0;background:linear-gradient(180deg,var(--violet),#5b2fd6);
+  color:white;font-weight:700;cursor:pointer;box-shadow:0 18px 50px rgba(91,59,226,0.12);transition:transform .12s var(--ease)
+}
+.btn.secondary{background:transparent;color:var(--violet);border:1px solid rgba(123,89,241,0.12)}
+.btn:active{transform:translateY(2px)}
+
+/* ---------- letter scene ---------- */
+.letter-wrap{
+  width:880px;max-width:94vw;border-radius:18px;padding:20px;background:linear-gradient(180deg,var(--paper), #fff7ec);
+  box-shadow:0 40px 140px rgba(10,8,20,0.08);position:relative;overflow:hidden;
+}
+.letter-head{display:flex;justify-content:space-between;align-items:flex-start}
+.letter-title{font-family:'Great Vibes',cursive;font-size:36px;color:var(--violet);margin:0}
+.letter-meta{font-size:13px;color:rgba(0,0,0,0.45)}
+.letter-body{margin-top:18px;font-size:20px;line-height:1.9;color:var(--ink);white-space:pre-wrap;min-height:220px;padding-right:6px}
+
+/* stamp (clickable) to reveal hidden back message */
+.stamp{position:absolute;top:18px;right:18px;width:60px;height:60px;border-radius:12px;background:linear-gradient(180deg,#fff,#fff0);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid rgba(0,0,0,0.04);box-shadow:0 10px 30px rgba(123,89,241,0.06);z-index:12}
+.stamp img{width:36px;height:36px;display:block}
+
+/* hidden back */
+.hidden-back{
+  position:absolute;inset:0;padding:28px;background:linear-gradient(180deg, rgba(123,89,241,0.03), rgba(255,255,255,0.02));
+  opacity:0;pointer-events:none;transition:opacity .42s var(--ease);border-radius:18px;color:var(--ink)
+}
+.hidden-back.visible{opacity:1;pointer-events:auto}
+
+/* 🔹 Tambahan efek blur ketika pesan tersembunyi aktif */
+.letter-wrap.blur-active .letter-body,
+.letter-wrap.blur-active .letter-head {
+  filter: blur(6px);
+  transition: filter .4s ease;
+}
+
+/* ---------- portal scene ---------- */
+.portal-wrap{width:920px;max-width:95vw;border-radius:16px;padding:16px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));display:flex;gap:18px;align-items:stretch;box-shadow:0 40px 160px rgba(0,0,0,0.16)}
+.portal-media{flex:1;border-radius:12px;overflow:hidden;min-height:380px;background:linear-gradient(180deg,#061022,#09203a);display:flex;align-items:center;justify-content:center;position:relative;transform-style:preserve-3d}
+.portal-media img, .portal-media video{width:100%;height:100%;object-fit:cover;display:block;transform-origin:center;transition:transform 700ms var(--ease)}
+.portal-side{width:320px;padding:12px;display:flex;flex-direction:column;gap:12px;justify-content:center}
+.portal-title{font-family:'Great Vibes',cursive;color:var(--violet);font-size:26px;margin:0}
+.portal-text {
+  color: #5353ec !important; /* warna krem terang, kontras dengan latar belakang gelap */
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6); /* bayangan lembut agar tetap terbaca */
+}
+
+/* ---------- secret scene ---------- */
+.secret-card{width:760px;max-width:94vw;border-radius:14px;padding:18px;background:linear-gradient(180deg,#fffdf9,#fff8f2);box-shadow:0 36px 120px rgba(0,0,0,0.12)}
+.secret-actions{display:flex;gap:12px;margin-top:14px;align-items:flex-start}
+textarea{flex:1;min-height:120px;padding:12px;border-radius:10px;border:1px solid rgba(0,0,0,0.06);font-size:15px;resize:vertical}
+
+/* ---------- handwriting span ---------- */
+.hw-char{display:inline-block;opacity:0;transform:translateY(8px) rotate(-1deg);transition:all .20s var(--ease)}
+.hw-char.show{opacity:1;transform:none}
+
+/* responsive */
+@media(max-width:980px){
+  .start-card{width:92vw;padding:20px}
+  .letter-wrap{width:92vw;padding:16px}
+  .portal-wrap{flex-direction:column}
+  .portal-side{width:100%;text-align:center}
+  .secret-card{width:92vw}
+  .letter-body{font-size:18px}
+}
+</style>
+</head>
+<body>
+  <audio id="bgMusic" loop src=""></audio>
+  <!-- ambient -->
+  <div id="ambient" class="ambient" aria-hidden="true"></div>
+
+  <!-- canvas for particles -->
+  <canvas id="fxCanvas"></canvas>
+
+  <!-- scenes -->
+  <div id="sceneStart" class="scene active" role="dialog" aria-labelledby="startTitle">
+    <div class="start-card">
+      <div class="title" id="startTitle">Untuk Kiya Ice Cream</div>
+      <div class="subtitle">Sebuah surat dari identitas — maksudnya dariku</div>
+      <div class="controls" style="margin-top:18px">
+        <button id="btnOpen" class="btn" aria-controls="sceneLetter">🎁 Buka Kado</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sceneLetter" class="scene" role="article" aria-hidden="true">
+    <div class="letter-wrap" id="letterWrap">
+      <div class="stamp" id="stamp" title="Ketuk untuk membuka pesan tersembunyi">
+        <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%237b59f1'><path d='M12 2l3 6 7 .5-5 4 2 6-6-3-6 3 2-6-5-4 7-.5z'/></svg>" alt="cap"/>
+      </div>
+
+      <div class="hidden-back" id="hiddenBack">
+        <h3 style="font-family:'Great Vibes',cursive;color:var(--violet);margin:0 0 8px 0">Pesan Tersembunyi</h3>
+        <p id="hiddenText" style="font-size:16px;line-height:1.7;color:var(--ink)">Di balik goresan tinta ada doa dan rinduku — Di usia baru ini, semoga kamu selalu dikelilingi oleh cinta dan kebahagiaan.</p>
+      </div>
+
+      <div class="letter-head">
+        <div>
+          <div class="letter-title">Untuk <span id="recipientName">Kiya Ice Cream</span></div>
+          <div class="letter-meta">Dari seseorang yang menuliskan namamu.</div>
+        </div>
+        <div class="small-muted">— Violet Evergarden</div>
+      </div>
+
+      <div id="letterBody" class="letter-body" aria-live="polite"></div>
+
+      <div style="display:flex;justify-content:center;margin-top:18px">
+        <button id="btnPortal" class="btn secondary" style="background:linear-gradient(180deg,#5e3fe0,#7b59f1);color:#fff">✨ Violet </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="scenePortal" class="scene" role="region" aria-hidden="true">
+    <div class="portal-wrap">
+      <div id="portalMedia" class="portal-media" aria-hidden="false"></div>
+      <div class="portal-side">
+        <div class="portal-title" id="portalTitle">Selamat Datang di Dunia Keajaiban</div>
+        <div class="portal-text" id="portalText">Sentuh "Lanjut ke Pesan Identitas" untuk melihat kejutan berikutnya.</div>
+        <div style="margin-top:12px">
+          <button id="btnRevealSecret" class="btn">Pesan Identitas</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<div id="sceneSecret" class="scene" role="dialog" aria-hidden="true">
+    <div id="mediaHeaderContainer" style="
+        width: 200px;
+        height: 200px;
+        margin: 0 auto 20px auto;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        background-color: #f0f0f0;
+    ">
+        <img id="secretMedia" src="https://static.wikia.nocookie.net/vsbattles/images/f/f1/LawOfIdentityDKDAct5.png/revision/latest?cb=20240713183029" alt="Media Rahasia" style="
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        ">
+        </div>
+    <div class="secret-card">
+        <h3 style="margin:0 0 8px 0;font-family:'Great Vibes',cursive">Pesan Hukum Identitas ✨</h3>
+        <div id="secretText" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
+        <div class="secret-actions" style="margin-top:12px">
+            <textarea id="replyBox" placeholder="Tulis balasan"></textarea>
+            <div style="display:flex;flex-direction:column;gap:8px">
+                <button id="btnSendWA" class="btn">📨 Kirim ke WhatsApp</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* =========================
+   CONFIG — edit values here
+   ========================= */
+const CONFIG = {
+  RECIPIENT: "Kiya Ice Cream",
+  AMBIENT_IMG: "https://images.unsplash.com/photo-1482192505345-5655af888cc4?q=80&w=1600&auto=format&fit=crop",
+  BGM: "https://dn721802.ca.archive.org/0/items/violet-egard-ost/Disc%202/2-01.%20Across%20the%20Violet%20Sky.mp3",
+  PORTAL_MEDIA: "https://i.pinimg.com/originals/5c/0f/13/5c0f13710d7753f1fda10881d5bc5a4b.gif",
+  PORTAL_TYPE: "img",
+  PORTAL_TITLE: "Violet — Evergarden",
+  PORTAL_TEXT: "Selamat ulang tahun, Kiya Ice, hehe alias Kiaria. Di hari ini, kuharap setiap cahaya kecil menghangatkan langkahmu. Layaknya surat yang sampai kepada penerimanya,semoga semua doa dan harapanmu dan harapanku juga sampai kepadamu. ",
+  SECRET_TEXT: "Ini pesan identitas — di balik surat ada doa dan rindu. Semoga hari-harimu selalu hangat. And nice to meet you.",
+  WHATSAPP_NUMBER: "6282341867205",
+  WHATSAPP_DEFAULT: "Terima kasih banyak!"
+};
+/* ========================= */
+
+/* DOM refs */
+const sceneStart = document.getElementById('sceneStart');
+const sceneLetter = document.getElementById('sceneLetter');
+const scenePortal = document.getElementById('scenePortal');
+const sceneSecret = document.getElementById('sceneSecret');
+
+const btnOpen = document.getElementById('btnOpen');
+const btnPortal = document.getElementById('btnPortal');
+const btnRevealSecret = document.getElementById('btnRevealSecret');
+const btnSendWA = document.getElementById('btnSendWA');
+
+const recipientEl = document.getElementById('recipientName');
+const letterBody = document.getElementById('letterBody');
+const stamp = document.getElementById('stamp');
+const hiddenBack = document.getElementById('hiddenBack');
+const hiddenText = document.getElementById('hiddenText');
+
+const portalMedia = document.getElementById('portalMedia');
+const portalTitle = document.getElementById('portalTitle');
+const portalText = document.getElementById('portalText');
+
+const secretTextEl = document.getElementById('secretText');
+const replyBox = document.getElementById('replyBox');
+
+const ambient = document.getElementById('ambient');
+
+const fxCanvas = document.getElementById('fxCanvas');
+const ctx = fxCanvas.getContext('2d');
+
+// 🎧 Tambahan: Ambil elemen audio dan set sumbernya
+const bgMusic = document.getElementById('bgMusic');
+bgMusic.src = CONFIG.BGM;
+
+/* initial */
+recipientEl.textContent = CONFIG.RECIPIENT;
+ambient.style.backgroundImage = `url('${CONFIG.AMBIENT_IMG}')`;
+
+/* lock scroll explicitly */
+document.documentElement.style.overflow = 'hidden';
+document.body.style.overflow = 'hidden';
+
+/* canvas size */
+let W=0,H=0;
+function resize(){ W = fxCanvas.width = innerWidth; H = fxCanvas.height = innerHeight; }
+window.addEventListener('resize', resize); resize();
+
+/* particles: 3 layers of snow for depth + sparks for transitions */
+const particles = [];
+function spawnSnow(layerCount=110){
+  for(let i=0;i<layerCount;i++){
+    particles.push({
+      type:'snow',
+      x: Math.random()*W,
+      y: Math.random()*H,
+      r: 0.6 + Math.random()*3.4,
+      vx: (Math.random()-0.5)*0.3,
+      vy: 0.2 + Math.random()*0.9,
+      alpha: 0.06 + Math.random()*0.9,
+      hue: 200 + Math.random()*30
+    });
+  }
+}
+function burst(x,y,n=30){
+  for(let i=0;i<n;i++){
+    particles.push({
+      type:'spark',
+      x,y,
+      r: 1 + Math.random()*4,
+      vx: (Math.random()-0.5)*6,
+      vy: (Math.random()-1.5)*6,
+      life: 30 + Math.random()*50
+    });
+  }
+}
+spawnSnow(140);
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  for(let i=particles.length-1;i>=0;i--){
+    const p = particles[i];
+    if(p.type==='snow'){
+      p.x += p.vx; p.y += p.vy;
+      if(p.y > H + 50){ p.y = -60; p.x = Math.random()*W; }
+      const g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r*6);
+      g.addColorStop(0, `rgba(210,235,255,${p.alpha})`);
+      g.addColorStop(1, 'rgba(210,235,255,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*2,0,Math.PI*2); ctx.fill();
+    } else if(p.type==='spark'){
+      p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.life--;
+      const a = Math.max(0,p.life/80);
+      ctx.fillStyle = `rgba(123,89,241,${a})`;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+      if(p.life<=0) particles.splice(i,1);
+    }
+  }
+  requestAnimationFrame(render);
+}
+render();
+
+/* scenes */
+function showScene(from,to){
+  from.classList.remove('active');
+  to.classList.add('active');
+}
+
+/* start → letter */
+btnOpen.addEventListener('click', ()=>{
+  showScene(sceneStart,sceneLetter);
+  burst(innerWidth/2,innerHeight/2,40);
+  playHandwriting();
+
+
+// 🎧 Tambahan: Panggil .play() setelah interaksi pengguna
+  bgMusic.play().catch(e => {
+    // Tangani error jika pemutaran masih diblokir (jarang terjadi setelah interaksi)
+    console.log("Gagal memutar musik: " + e);
+  });
+});
+/* letter → portal */
+btnPortal.addEventListener('click', ()=>{
+  showScene(sceneLetter,scenePortal);
+  burst(innerWidth/2,innerHeight/2,36);
+  if(CONFIG.PORTAL_TYPE==='img'){
+    portalMedia.innerHTML = `<img src="${CONFIG.PORTAL_MEDIA}" alt="portal image"/>`;
+  }else{
+    portalMedia.innerHTML = `<video src="${CONFIG.PORTAL_MEDIA}" autoplay loop muted playsinline></video>`;
+  }
+  portalTitle.textContent = CONFIG.PORTAL_TITLE;
+  portalText.textContent = CONFIG.PORTAL_TEXT;
+});
+
+/* portal → secret */
+btnRevealSecret.addEventListener('click', ()=>{
+  showScene(scenePortal,sceneSecret);
+  burst(innerWidth/2,innerHeight/2,34);
+  secretTextEl.textContent = CONFIG.SECRET_TEXT;
+});
+
+/* whatsapp */
+btnSendWA.addEventListener('click', ()=>{
+  const msg = encodeURIComponent(replyBox.value.trim() || CONFIG.WHATSAPP_DEFAULT);
+  window.open(`https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${msg}`,'_blank');
+});
+
+/* reveal hidden message — with blur */
+stamp.addEventListener('click', ()=>{
+  hiddenBack.classList.toggle('visible');
+  // 🔹 tambahan: aktifkan blur di surat
+  document.getElementById('letterWrap').classList.toggle('blur-active', hiddenBack.classList.contains('visible'));
+
+  const r = stamp.getBoundingClientRect();
+  burst(r.left + r.width/2, r.top + r.height/2, 26);
+});
+
+/* handwriting animation */
+function playHandwriting(){
+  const text = "Halo Kiya Ice Cream,\n\nDalam setiap salju yang turun, ada rasa hangat yang tak pernah padam. Kau seperti musim semi yang datang setelah dingin panjang.\n\nUntukmu yang berulang tahun, semoga harimu dipenuhi hal-hal baik. Aku berharap kamu selalu baik-baik saja.\n\n— Violet 🌸";
+  letterBody.textContent = '';
+  let i=0;
+  const interval = setInterval(()=>{
+    letterBody.textContent += text[i];
+    i++;
+    if(i>=text.length) clearInterval(interval);
+  }, 28);
+}
+</script>
+</body>
+</html>
